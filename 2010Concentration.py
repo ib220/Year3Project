@@ -6,10 +6,27 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 #loading data
-CO14_data = iris.load_cube('2010CO14.nc')
-CO14_prod = iris.load('CO14Production2010.nc')[0]
-#CO14_loss = iris.load_cube('OHCO14reaction.nc')
+CO14_data = iris.load_cube('2010CO14.nc') #units mol/cm^3
+CO14_prod = iris.load('CO14Production2010.nc')[0] #units kg/m2/s
+CO14_loss = iris.load_cube('OHCO14reaction.nc')  #mol/gridcell/s
+#unit used for production and loss will be mol/cm^3/s
 
+#Determining conversion factors
+# mol to mass (kg) 
+kg_mol = 1/30e-3 
+
+#altitude of each cell
+level_thick = CO14_data.coord('level_height').bounds[:,1] -  CO14_data.coord('level_height').bounds[:,0]
+#longitude of each cell
+long_len = CO14_data.coord('longitude').bounds[:,1] -  CO14_data.coord('longitude').bounds[:,0]
+#latitude of each cell 
+lat_len = CO14_data.coord('latitude').bounds[:,1] -  CO14_data.coord('latitude').bounds[:,0]
+#longitute and latitude  box thickness is the same 
+
+#conversion factor for production 
+prod_conv = kg_mol/(level_thick * 10e-6) #dividing by cell height and converting from m^3 to cm^3
+#conversion factor for loss 
+loss_conv = 1/(lat_len[0]*long_len[0]*level_thick)
 #%%
 #looking at height variation 
 
