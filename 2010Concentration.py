@@ -1,4 +1,11 @@
 
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Jan 31 14:48:03 2023
+
+@author: lpb20
+"""
+
 #You can always go ahead and make changes to colorbars and other plotting variables
 # to try to ake the figure look either prettier, or  more informative.
 
@@ -48,14 +55,11 @@ plt.xlabel('Model Level Height')
 plt.ylabel('Model Level Thickness (m)')
 plt.show()
 
-##### NOTE #######
-#height in concentration is level_height 
-#height in prod and loss is atmosphere_hybrid_height_coordinate
 
 #%%
 
 
-def concen_month(data,monthspec, prod=0, loss=0):
+def concen_month(data,monthspec):
     """
     Function collpases cube over longitude and time, 
     returning mean 14CO concentration
@@ -64,17 +68,7 @@ def concen_month(data,monthspec, prod=0, loss=0):
     coords_lt = ['longitude','time']
     data_mean = data_month.collapsed(coords_lt,iris.analysis.MEAN)
     
-    if prod==1:
-        data_mean_new = prod_conv * data_mean
-        return data_mean_new 
-    else: 
-        return data_mean 
-    
-    if loss==1: 
-        data_mean_new = loss_conv * data_mean
-        return data_mean_new 
-    else: 
-        return data_mean 
+    return data_mean 
         
     
 
@@ -86,8 +80,12 @@ for m in range(1,2):
     
     #extracting latitude at mindpoint of each cell 
     latitude = data_months.coord('latitude').points
-    #extracting altitude at mindpoint of each cell  in km 
-   # altitude = (data_months.coord('level_height').points)
+    #extracting altitude at mindpoint of each cell  in m 
+    
+    ##### NOTE #######
+    #height in concentration is level_height 
+    #height in prod and loss is atmosphere_hybrid_height_coordinate
+    #altitude = (data_months.coord('level_height').points)
     altitude = (data_months.coord('atmosphere_hybrid_height_coordinate').points)
     
     #defining the tropopause level - only works for pressure plot 
@@ -97,7 +95,7 @@ for m in range(1,2):
     pressure = 1000 * np.exp( -altitude / 8.5e3)
     
     #plt.pcolor(latitude,altitude,data_months.data) # plotting latitude 
-    plt.pcolor(latitude,pressure,data_months.data) #plotting as function of pressure
+    plt.pcolor(latitude,pressure,data_months.data*prod_conv) #plotting as function of pressure
     plt.gca().invert_yaxis() # invert axis as max pressure at surface 
     
     plt.plot(latitude,Tropopause, color='red', label='Tropopause') # plot approx tropopause only for pressure
@@ -105,16 +103,11 @@ for m in range(1,2):
     plt.yticks([10,100,200,300,400,500,600,700,800,900,1000])
 
     cbar = plt.colorbar()
-    cbar.set_label('$^{14}$CO Production (molecules cm$^{-3}$)')
+    cbar.set_label('$^{14}$CO Production (moles cm$^{-3}$ s$^{-1}$)')
     plt.title('14CO production in month #{}'.format(m))
     plt.xlabel('Latitude')
     plt.ylabel('Pressure (hbar)')
-   #plt.ylabel('Altitude (km)')
+    #plt.ylabel('Altitude (km)')
     plt.legend(loc='lower left')
     plt.savefig('ProdPlot/14C_prod_long{}.png'.format(m))
     plt.show()
-
-
-
-
-
