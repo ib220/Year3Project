@@ -1,3 +1,4 @@
+
 #You can always go ahead and make changes to colorbars and other plotting variables
 # to try to ake the figure look either prettier, or  more informative.
 
@@ -27,6 +28,7 @@ lat_len = CO14_data.coord('latitude').bounds[:,1] -  CO14_data.coord('latitude')
 prod_conv = kg_mol/(level_thick * 10e-6) #dividing by cell height and converting from m^3 to cm^3
 #conversion factor for loss 
 loss_conv = 1/(lat_len[0]*long_len[0]*level_thick)
+
 #%%
 #looking at height variation 
 
@@ -46,11 +48,14 @@ plt.xlabel('Model Level Height')
 plt.ylabel('Model Level Thickness (m)')
 plt.show()
 
+##### NOTE #######
+#height in concentration is level_height 
+#height in prod and loss is atmosphere_hybrid_height_coordinate
 
 #%%
 
 
-def concen_month(data,monthspec):
+def concen_month(data,monthspec, prod=0, loss=0):
     """
     Function collpases cube over longitude and time, 
     returning mean 14CO concentration
@@ -59,20 +64,31 @@ def concen_month(data,monthspec):
     coords_lt = ['longitude','time']
     data_mean = data_month.collapsed(coords_lt,iris.analysis.MEAN)
     
-    return data_mean
-
-
+    if prod==1:
+        data_mean_new = prod_conv * data_mean
+        return data_mean_new 
+    else: 
+        return data_mean 
+    
+    if loss==1: 
+        data_mean_new = loss_conv * data_mean
+        return data_mean_new 
+    else: 
+        return data_mean 
+        
+    
 
 #plotting 14CO concentration for each month and saving data
-for m in range(1,13): 
-    data_months = concen_month(CO14_data,m)
+for m in range(1,2): 
+    data_months = concen_month(CO14_prod,m, prod=1)
     #saving data as nc file
-    iris.save(data_months,'ConcData/14COcon{}.nc'.format(m) )
+    iris.save(data_months,'ProdData/14COprod{}.nc'.format(m) )
     
     #extracting latitude at mindpoint of each cell 
     latitude = data_months.coord('latitude').points
     #extracting altitude at mindpoint of each cell  in km 
-    altitude = (data_months.coord('level_height').points)
+   # altitude = (data_months.coord('level_height').points)
+    altitude = (data_months.coord('atmosphere_hybrid_height_coordinate').points)
     
     #defining the tropopause level - only works for pressure plot 
     Tropopause = (300 - 215 * (np.cos((np.pi * latitude)/180)) ** 2)
@@ -81,7 +97,7 @@ for m in range(1,13):
     pressure = 1000 * np.exp( -altitude / 8.5e3)
     
     #plt.pcolor(latitude,altitude,data_months.data) # plotting latitude 
-    plt.pcolor(latitude,pressure,data_months.data) #plotting presusre 
+    plt.pcolor(latitude,pressure,data_months.data) #plotting as function of pressure
     plt.gca().invert_yaxis() # invert axis as max pressure at surface 
     
     plt.plot(latitude,Tropopause, color='red', label='Tropopause') # plot approx tropopause only for pressure
@@ -89,13 +105,16 @@ for m in range(1,13):
     plt.yticks([10,100,200,300,400,500,600,700,800,900,1000])
 
     cbar = plt.colorbar()
-    cbar.set_label('$^{14}$CO Concentration (molecules cm$^{-3}$)')
-    plt.title('14C concentration in month #{}'.format(m))
+    cbar.set_label('$^{14}$CO Production (molecules cm$^{-3}$)')
+    plt.title('14CO production in month #{}'.format(m))
     plt.xlabel('Latitude')
     plt.ylabel('Pressure (hbar)')
    #plt.ylabel('Altitude (km)')
     plt.legend(loc='lower left')
-    plt.savefig('ConcPlot/14C_con_long{}.png'.format(m))
+    plt.savefig('ProdPlot/14C_prod_long{}.png'.format(m))
     plt.show()
+
+
+
 
 
